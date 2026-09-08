@@ -1,0 +1,13 @@
+groups:
+  - name: ecommerce
+    rules:
+      - alert: BackendDown
+        expr: up{job="ecommerce-backend"} == 0
+        for: 2m
+        labels: { severity: critical }
+        annotations: { summary: Ecommerce backend is unavailable }
+      - alert: HighApiLatency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels: { severity: warning }
+        annotations: { summary: API p95 latency is above one second }

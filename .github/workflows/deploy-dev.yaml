@@ -1,0 +1,14 @@
+name: Deploy Dev
+on:
+  push:
+    branches: [develop]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-kubectl@v4
+      - uses: azure/k8s-set-context@v4
+        with: { method: kubeconfig, kubeconfig: '${{ secrets.KUBE_CONFIG }}' }
+      - run: kubectl apply -k kubernetes/overlays/dev

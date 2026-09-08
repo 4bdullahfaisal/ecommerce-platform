@@ -1,0 +1,17 @@
+name: Deploy Production
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        required: true
+        description: Image tag to deploy
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-kubectl@v4
+      - uses: azure/k8s-set-context@v4
+        with: { method: kubeconfig, kubeconfig: '${{ secrets.KUBE_CONFIG }}' }
+      - run: kubectl apply -k kubernetes/overlays/production
