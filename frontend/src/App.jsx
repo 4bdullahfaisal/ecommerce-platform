@@ -8,6 +8,8 @@ function App() {
   const [cart, setCart] = useState([]);
   const [category, setCategory] = useState('All');
   const [status, setStatus] = useState('');
+  const [showBag, setShowBag] = useState(false);
+  const [email, setEmail] = useState('');
 
   useEffect(() => {
     fetch(`${API_URL}/products`).then((response) => response.json()).then(setProducts).catch(() => setStatus('The catalogue is resting. Please try again.'));
@@ -28,15 +30,14 @@ function App() {
 
   async function checkout() {
     if (!cart.length) return;
-    const email = window.prompt('Email for your order confirmation:');
-    if (!email) return;
     const response = await fetch(`${API_URL}/orders`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, items: cart.map((item) => ({ productId: item.id, quantity: item.quantity })) }) });
-    if (response.ok) { setCart([]); setStatus('Order received. Thank you for choosing well.'); }
+    if (response.ok) { setCart([]); setEmail(''); setShowBag(false); setStatus('Order received. Thank you for choosing well.'); }
     else setStatus('We could not place that order. Please check your details.');
   }
 
   return <div className="app">
-    <header className="topbar"><a className="wordmark" href="/">COMMON GROUND<span>.</span></a><nav><a href="#shop">Shop</a><a href="#story">Our point of view</a></nav><button className="bag" onClick={checkout}>Bag ({cartCount})</button></header>
+    <header className="topbar"><a className="wordmark" href="/">COMMON GROUND<span>.</span></a><nav><a href="#shop">Shop</a><a href="#story">Our point of view</a></nav><button className="bag" onClick={() => setShowBag(true)}>Bag ({cartCount})</button></header>
+    {showBag && <aside className="bag-panel" aria-label="Shopping bag"><div className="bag-heading"><div><p className="eyebrow">Your selection</p><h2>Shopping bag</h2></div><button className="close-bag" aria-label="Close shopping bag" onClick={() => setShowBag(false)}>×</button></div>{cart.length ? <><div className="bag-items">{cart.map((item) => <div className="bag-item" key={item.id}><img src={item.imageUrl} alt="" /><div><h3>{item.name}</h3><p>{item.quantity} × ${item.price.toFixed(2)}</p></div><strong>${(item.price * item.quantity).toFixed(2)}</strong></div>)}</div><div className="bag-total"><span>Total</span><strong>${total.toFixed(2)}</strong></div><form className="checkout-form" onSubmit={(event) => { event.preventDefault(); checkout(); }}><label htmlFor="order-email">Email for your order</label><input id="order-email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" required /><button type="submit">Place order</button></form></> : <p className="empty-bag">Your bag is waiting for something considered.</p>}</aside>}
     <main>
       <section className="hero"><p className="eyebrow">Objects with a longer life</p><h1>Make room<br /><em>for better.</em></h1><p className="hero-copy">A small collection of useful, beautiful things for the everyday rituals that make a home.</p><a className="text-link" href="#shop">Explore the collection <span>↘</span></a></section>
       <section className="shop" id="shop"><div className="section-heading"><div><p className="eyebrow">The edit / 01</p><h2>Good things, thoughtfully chosen.</h2></div><div className="filters">{categories.map((item) => <button className={category === item ? 'active' : ''} onClick={() => setCategory(item)} key={item}>{item}</button>)}</div></div><div className="product-grid">{visibleProducts.map((product) => <ProductCard key={product.id} product={product} onAdd={addToCart} />)}</div></section>
