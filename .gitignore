@@ -1,5 +1,7 @@
 __pycache__/
 *.py[cod]
+*.db
+backend/instance/
 .pytest_cache/
 .venv/
 .env
