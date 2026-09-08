@@ -1,6 +1,25 @@
 # Common Ground Commerce
 
-A small, production-shaped ecommerce platform with a React/Vite storefront, Flask API, PostgreSQL, Redis/Celery, Docker Compose, Kubernetes manifests, Terraform scaffolding, and Prometheus/Grafana/Loki configuration.
+[![CI](https://github.com/4bdullahfaisal/ecommerce-platform/actions/workflows/ci.yaml/badge.svg)](https://github.com/4bdullahfaisal/ecommerce-platform/actions/workflows/ci.yaml)
+[![Publish Images](https://github.com/4bdullahfaisal/ecommerce-platform/actions/workflows/publish-images.yaml/badge.svg)](https://github.com/4bdullahfaisal/ecommerce-platform/actions/workflows/publish-images.yaml)
+[![React](https://img.shields.io/badge/frontend-React%20%2B%20Vite-61DAFB?logo=react&logoColor=20232a)](frontend/)
+[![Python](https://img.shields.io/badge/backend-Python%203.12%2B-3776AB?logo=python&logoColor=white)](backend/)
+[![Flask](https://img.shields.io/badge/API-Flask-000000?logo=flask&logoColor=white)](backend/app/app.py)
+[![Docker](https://img.shields.io/badge/runtime-Docker%20Compose-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
+[![Kubernetes](https://img.shields.io/badge/orchestration-Kubernetes-326CE5?logo=kubernetes&logoColor=white)](kubernetes/)
+[![Terraform](https://img.shields.io/badge/infrastructure-Terraform-844FBA?logo=terraform&logoColor=white)](terraform/)
+
+> A complete, production-shaped ecommerce platform that runs locally for free and has a clear path toward Kubernetes and cloud deployment.
+
+| Quick link | Purpose |
+| --- | --- |
+| [Run with Docker](#run-locally) | Start the complete local application |
+| [Run with Kubernetes](#local-kubernetes-and-monitoring) | Run the production-shaped stack in Minikube |
+| [View CI/CD](#github-actions-cicd) | Understand GitHub automation |
+| [API reference](#api-reference) | Try the backend endpoints |
+| [Project map](#project-map) | Find the code and infrastructure files |
+
+Common Ground includes a React/Vite storefront, Flask API, PostgreSQL database, Redis/Celery background worker, Docker Compose environment, Kubernetes manifests, Terraform scaffolding, Prometheus metrics, Grafana dashboards, Loki configuration, and GitHub Actions automation.
 
 ## Project overview
 
@@ -20,70 +39,101 @@ GitHub Actions tests, builds, and publishes container images
 
 The application is intentionally usable without AWS, payment credentials, or a paid hosting account. Docker Compose is the simplest local environment. Minikube provides a local Kubernetes environment that mirrors the production shape.
 
-## Repository map
+## Technology stack
 
-### Application code
+| Layer | Technology | What it does |
+| --- | --- | --- |
+| Storefront | React, Vite, CSS | Product browsing, filtering, bag, and checkout UI |
+| Web server | Nginx | Serves the frontend and proxies `/api` requests |
+| API | Python, Flask | Validates requests, applies business rules, and exposes JSON endpoints |
+| Database | PostgreSQL, SQLAlchemy | Stores products and orders persistently |
+| Background jobs | Redis, Celery | Queues and processes order confirmation work |
+| Containers | Docker, Docker Compose | Reproducible local development and service orchestration |
+| Platform | Kubernetes, Kustomize | Deploys and scales services in a cluster |
+| Infrastructure | Terraform, AWS/EKS | Optional cloud infrastructure definition |
+| Observability | Prometheus, Grafana, Loki | Metrics, dashboards, alerts, and log storage configuration |
+| Automation | GitHub Actions, GHCR | Tests code and publishes container images |
 
-- `frontend/src/App.jsx`: storefront state, product filtering, shopping bag, checkout, and order confirmation UI.
-- `frontend/src/components/ProductCard.jsx`: reusable product card component.
-- `frontend/src/main.jsx`: React entry point.
-- `frontend/src/styles.css`: responsive visual design and bag/confirmation panel styling.
-- `frontend/index.html`: Vite document shell.
-- `frontend/public/index.html`: static fallback document.
-- `frontend/package.json`: frontend scripts and dependencies.
-- `frontend/package-lock.json`: locked npm dependency versions.
-- `frontend/vite.config.js`: Vite and React configuration.
-- `frontend/Dockerfile`: builds the frontend and serves it through Nginx.
-- `frontend/nginx.conf`: serves the SPA and proxies `/api` requests to the backend.
+## Project map
 
-- `backend/app/app.py`: Flask application factory and API routes.
-- `backend/app/models.py`: SQLAlchemy `Product` and `Order` models.
-- `backend/app/utils.py`: initial product catalogue seed data.
-- `backend/app/tasks.py`: Celery worker setup and optional SMTP order confirmations.
-- `backend/app/__init__.py`: Python package marker.
-- `backend/requirements.txt`: pinned Python dependencies.
-- `backend/Dockerfile`: production-style Gunicorn image.
-- `backend/pytest.ini`: backend test import configuration.
-- `backend/tests/test_app.py`: API health, catalogue, and order tests.
-- `backend/tests/test_models.py`: model serialization test.
+The project is organized by responsibility instead of one large application folder.
 
-### Local infrastructure
+### Frontend: `frontend/`
 
-- `docker-compose.yml`: starts frontend, backend, PostgreSQL, Redis, and the Celery worker.
-- `.env.example`: safe template for database, Redis, frontend, and optional SMTP settings.
-- `.dockerignore`: prevents local build files from entering Docker contexts.
-- `.gitignore`: excludes secrets, databases, caches, bytecode, node modules, builds, and Terraform state.
+| File | Responsibility |
+| --- | --- |
+| `src/App.jsx` | Storefront state, filtering, bag, checkout, and confirmation UI |
+| `src/components/ProductCard.jsx` | Reusable product card |
+| `src/main.jsx` | React entry point |
+| `src/styles.css` | Responsive visual design and interaction states |
+| `index.html` | Vite document shell |
+| `public/index.html` | Static fallback document |
+| `package.json` | npm scripts and frontend dependencies |
+| `package-lock.json` | Locked npm versions |
+| `vite.config.js` | Vite and React configuration |
+| `Dockerfile` | Multi-stage frontend image build |
+| `nginx.conf` | SPA fallback and backend API proxy |
 
-### Kubernetes
+### Backend: `backend/`
 
-- `kubernetes/base/`: reusable namespace, configuration, secrets, deployments, services, ingress, storage, database, Redis, worker, and monitoring resources.
-- `kubernetes/base/data.yaml`: PostgreSQL persistent volume claim and PostgreSQL/Redis deployments.
-- `kubernetes/base/monitoring.yaml`: Prometheus, Grafana, Loki, services, and monitoring configuration.
-- `kubernetes/base/kustomization.yaml`: base resource index.
-- `kubernetes/overlays/dev/`: local development image names and tags.
-- `kubernetes/overlays/staging/`: staging image and replica customization.
-- `kubernetes/overlays/production/`: production replica customization.
+| File | Responsibility |
+| --- | --- |
+| `app/app.py` | Flask application factory, routes, validation, and metrics |
+| `app/models.py` | SQLAlchemy `Product` and `Order` models |
+| `app/utils.py` | Initial product catalogue seed data |
+| `app/tasks.py` | Celery setup and optional SMTP order confirmations |
+| `requirements.txt` | Pinned Python dependencies |
+| `Dockerfile` | Gunicorn backend image |
+| `pytest.ini` | Test import configuration |
+| `tests/test_app.py` | Health, catalogue, and order API tests |
+| `tests/test_models.py` | Model serialization test |
 
-### Cloud and observability
+### Local runtime: root files
 
-- `terraform/main.tf`: AWS provider and VPC, EKS, and monitoring module wiring.
-- `terraform/variables.tf`: region, environment, cluster, and network inputs.
-- `terraform/outputs.tf`: cluster and VPC outputs.
-- `terraform/envs/*.tfvars`: dev, staging, and production variable values.
-- `terraform/modules/vpc/`: VPC, availability zones, and private subnets.
-- `terraform/modules/eks/`: EKS cluster and IAM role.
-- `terraform/modules/monitoring/`: CloudWatch log group.
-- `monitoring/prometheus/`: Prometheus scrape configuration and alerts.
-- `monitoring/grafana/dashboards/`: dashboard definition.
-- `monitoring/loki/`: Loki storage and schema configuration.
+| File | Responsibility |
+| --- | --- |
+| `docker-compose.yml` | Starts frontend, API, PostgreSQL, Redis, and worker |
+| `.env.example` | Safe template for local settings and optional SMTP |
+| `.dockerignore` | Keeps local artifacts out of image build contexts |
+| `.gitignore` | Excludes secrets, databases, caches, builds, and state |
+| `README.md` | Project documentation and operating guide |
 
-### GitHub automation
+### Kubernetes: `kubernetes/`
 
-- `.github/workflows/ci.yaml`: tests, frontend build, Compose validation, Kubernetes rendering, and Docker builds.
-- `.github/workflows/publish-images.yaml`: publishes backend and frontend images to GitHub Container Registry.
-- `.github/workflows/deploy-dev.yaml`: manual development deployment when a cluster is available.
-- `.github/workflows/deploy-staging.yaml`: staging deployment workflow.
-- `.github/workflows/deploy-prod.yaml`: manually approved production deployment workflow.
+| Path | Responsibility |
+| --- | --- |
+| `base/` | Shared namespace, config, secrets, workloads, services, ingress, storage, and monitoring |
+| `base/data.yaml` | PostgreSQL persistent volume, PostgreSQL, and Redis deployments |
+| `base/deployment.yaml` | Frontend, backend, and Celery worker deployments |
+| `base/monitoring.yaml` | Prometheus, Grafana, Loki, services, and configs |
+| `base/kustomization.yaml` | Base resource index |
+| `overlays/dev/` | Local image names and development settings |
+| `overlays/staging/` | Staging image and replica settings |
+| `overlays/production/` | Production replica settings |
+
+### Infrastructure and observability
+
+| Path | Responsibility |
+| --- | --- |
+| `terraform/main.tf` | AWS provider and module wiring |
+| `terraform/variables.tf` | Region, environment, cluster, and network inputs |
+| `terraform/envs/*.tfvars` | Dev, staging, and production values |
+| `terraform/modules/vpc/` | VPC, availability zones, and private subnets |
+| `terraform/modules/eks/` | EKS cluster and IAM role |
+| `terraform/modules/monitoring/` | CloudWatch log group |
+| `monitoring/prometheus/` | Scrape configuration and alert rules |
+| `monitoring/grafana/dashboards/` | Dashboard definition |
+| `monitoring/loki/` | Loki storage and schema configuration |
+
+### GitHub automation: `.github/workflows/`
+
+| Workflow | Trigger | Responsibility |
+| --- | --- | --- |
+| `ci.yaml` | Pushes and pull requests | Tests, builds, and validates configuration |
+| `publish-images.yaml` | Push to `main` or manual run | Publishes backend/frontend images to GHCR |
+| `deploy-dev.yaml` | Manual | Applies the dev Kustomize overlay |
+| `deploy-staging.yaml` | Manual or release candidate tag | Applies staging resources |
+| `deploy-prod.yaml` | Manual with input | Applies production resources |
 
 ## Run locally
 
