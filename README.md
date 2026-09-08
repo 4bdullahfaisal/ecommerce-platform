@@ -1,193 +1,165 @@
 # Common Ground Commerce
 
 [![CI](https://github.com/4bdullahfaisal/ecommerce-platform/actions/workflows/ci.yaml/badge.svg)](https://github.com/4bdullahfaisal/ecommerce-platform/actions/workflows/ci.yaml)
-[![Publish Images](https://github.com/4bdullahfaisal/ecommerce-platform/actions/workflows/publish-images.yaml/badge.svg)](https://github.com/4bdullahfaisal/ecommerce-platform/actions/workflows/publish-images.yaml)
 [![React](https://img.shields.io/badge/frontend-React%20%2B%20Vite-61DAFB?logo=react&logoColor=20232a)](frontend/)
 [![Python](https://img.shields.io/badge/backend-Python%203.12%2B-3776AB?logo=python&logoColor=white)](backend/)
-[![Flask](https://img.shields.io/badge/API-Flask-000000?logo=flask&logoColor=white)](backend/app/app.py)
-[![Docker](https://img.shields.io/badge/runtime-Docker%20Compose-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
+[![Docker](https://img.shields.io/badge/runtime-Docker-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
 [![Kubernetes](https://img.shields.io/badge/orchestration-Kubernetes-326CE5?logo=kubernetes&logoColor=white)](kubernetes/)
-[![Terraform](https://img.shields.io/badge/infrastructure-Terraform-844FBA?logo=terraform&logoColor=white)](terraform/)
 
-> A complete, production-shaped ecommerce platform that runs locally for free and has a clear path toward Kubernetes and cloud deployment.
+> Common Ground Commerce is a full-stack ecommerce platform built by Abdullah Faisal. It runs locally without AWS and includes a production-shaped path through Docker, Kubernetes, monitoring, and GitHub Actions.
 
-| Quick link | Purpose |
-| --- | --- |
-| [Full walkthrough](WALKTHROUGH.md) | Follow the project from startup to Kubernetes |
-| [Run with Docker](#run-locally) | Start the complete local application |
-| [Run with Kubernetes](#local-kubernetes-and-monitoring) | Run the production-shaped stack in Minikube |
-| [View CI/CD](#github-actions-cicd) | Understand GitHub automation |
-| [API reference](#api-reference) | Try the backend endpoints |
-| [Project map](#project-map) | Find the code and infrastructure files |
+Copyright (c) 2026 Abdullah Faisal. Licensed under the [MIT License](LICENSE).
 
-Common Ground includes a React/Vite storefront, Flask API, PostgreSQL database, Redis/Celery background worker, Docker Compose environment, Kubernetes manifests, Terraform scaffolding, Prometheus metrics, Grafana dashboards, Loki configuration, and GitHub Actions automation.
+## Contents
 
-## Project overview
+- [What this project does](#what-this-project-does)
+- [Technology stack](#technology-stack)
+- [Run locally](#run-locally)
+- [Test and build](#test-and-build)
+- [API reference](#api-reference)
+- [Kubernetes and monitoring](#kubernetes-and-monitoring)
+- [GitHub Actions](#github-actions)
+- [Repository map](#repository-map)
+- [Email configuration](#email-configuration)
+- [Production status](#production-status)
+- [License](#license)
 
-This repository demonstrates an ecommerce system from browser to deployment:
+## What this project does
+
+The project provides a working ecommerce flow:
+
+1. A customer browses products in the React storefront.
+2. The customer filters products and adds items to a shopping bag.
+3. The storefront sends the order to the Flask API.
+4. The API validates the email, products, and quantities.
+5. PostgreSQL stores the order and calculates the total from database prices.
+6. Redis queues an order-confirmation task.
+7. Celery processes the task in the background.
+8. The storefront displays the order number and total.
+9. Optional SMTP settings send a real confirmation email.
+
+## Architecture
 
 ```text
-Browser -> React/Vite frontend -> Nginx -> Flask API -> PostgreSQL
-											 |
-											 -> Redis -> Celery worker
+Browser
+	|
+	v
+React/Vite storefront -> Nginx -> Flask API -> PostgreSQL
+																			|
+																			v
+																Redis -> Celery worker -> optional SMTP
 
-Prometheus collects API metrics -> Grafana displays dashboards
-Loki is prepared for centralized logs
-Docker Compose runs locally; Kubernetes runs the multi-service stack
-Terraform describes optional AWS infrastructure
-GitHub Actions tests, builds, and publishes container images
+Prometheus <- /metrics
+Grafana    <- Prometheus
+Loki       <- log storage configuration
 ```
 
-The application is intentionally usable without AWS, payment credentials, or a paid hosting account. Docker Compose is the simplest local environment. Minikube provides a local Kubernetes environment that mirrors the production shape.
+Docker Compose runs the stack on one computer. Kubernetes runs the same services as a cluster. Terraform describes optional AWS infrastructure. GitHub Actions runs quality checks and publishes container images.
 
 ## Technology stack
 
-| Layer | Technology | What it does |
+| Layer | Technology | Responsibility |
 | --- | --- | --- |
-| Storefront | React, Vite, CSS | Product browsing, filtering, bag, and checkout UI |
-| Web server | Nginx | Serves the frontend and proxies `/api` requests |
-| API | Python, Flask | Validates requests, applies business rules, and exposes JSON endpoints |
-| Database | PostgreSQL, SQLAlchemy | Stores products and orders persistently |
-| Background jobs | Redis, Celery | Queues and processes order confirmation work |
-| Containers | Docker, Docker Compose | Reproducible local development and service orchestration |
-| Platform | Kubernetes, Kustomize | Deploys and scales services in a cluster |
-| Infrastructure | Terraform, AWS/EKS | Optional cloud infrastructure definition |
-| Observability | Prometheus, Grafana, Loki | Metrics, dashboards, alerts, and log storage configuration |
-| Automation | GitHub Actions, GHCR | Tests code and publishes container images |
-
-## Project map
-
-The project is organized by responsibility instead of one large application folder.
-
-### Frontend: `frontend/`
-
-| File | Responsibility |
-| --- | --- |
-| `src/App.jsx` | Storefront state, filtering, bag, checkout, and confirmation UI |
-| `src/components/ProductCard.jsx` | Reusable product card |
-| `src/main.jsx` | React entry point |
-| `src/styles.css` | Responsive visual design and interaction states |
-| `index.html` | Vite document shell |
-| `public/index.html` | Static fallback document |
-| `package.json` | npm scripts and frontend dependencies |
-| `package-lock.json` | Locked npm versions |
-| `vite.config.js` | Vite and React configuration |
-| `Dockerfile` | Multi-stage frontend image build |
-| `nginx.conf` | SPA fallback and backend API proxy |
-
-### Backend: `backend/`
-
-| File | Responsibility |
-| --- | --- |
-| `app/app.py` | Flask application factory, routes, validation, and metrics |
-| `app/models.py` | SQLAlchemy `Product` and `Order` models |
-| `app/utils.py` | Initial product catalogue seed data |
-| `app/tasks.py` | Celery setup and optional SMTP order confirmations |
-| `requirements.txt` | Pinned Python dependencies |
-| `Dockerfile` | Gunicorn backend image |
-| `pytest.ini` | Test import configuration |
-| `tests/test_app.py` | Health, catalogue, and order API tests |
-| `tests/test_models.py` | Model serialization test |
-
-### Local runtime: root files
-
-| File | Responsibility |
-| --- | --- |
-| `docker-compose.yml` | Starts frontend, API, PostgreSQL, Redis, and worker |
-| `.env.example` | Safe template for local settings and optional SMTP |
-| `.dockerignore` | Keeps local artifacts out of image build contexts |
-| `.gitignore` | Excludes secrets, databases, caches, builds, and state |
-| `README.md` | Project documentation and operating guide |
-
-### Kubernetes: `kubernetes/`
-
-| Path | Responsibility |
-| --- | --- |
-| `base/` | Shared namespace, config, secrets, workloads, services, ingress, storage, and monitoring |
-| `base/data.yaml` | PostgreSQL persistent volume, PostgreSQL, and Redis deployments |
-| `base/deployment.yaml` | Frontend, backend, and Celery worker deployments |
-| `base/monitoring.yaml` | Prometheus, Grafana, Loki, services, and configs |
-| `base/kustomization.yaml` | Base resource index |
-| `overlays/dev/` | Local image names and development settings |
-| `overlays/staging/` | Staging image and replica settings |
-| `overlays/production/` | Production replica settings |
-
-### Infrastructure and observability
-
-| Path | Responsibility |
-| --- | --- |
-| `terraform/main.tf` | AWS provider and module wiring |
-| `terraform/variables.tf` | Region, environment, cluster, and network inputs |
-| `terraform/envs/*.tfvars` | Dev, staging, and production values |
-| `terraform/modules/vpc/` | VPC, availability zones, and private subnets |
-| `terraform/modules/eks/` | EKS cluster and IAM role |
-| `terraform/modules/monitoring/` | CloudWatch log group |
-| `monitoring/prometheus/` | Scrape configuration and alert rules |
-| `monitoring/grafana/dashboards/` | Dashboard definition |
-| `monitoring/loki/` | Loki storage and schema configuration |
-
-### GitHub automation: `.github/workflows/`
-
-| Workflow | Trigger | Responsibility |
-| --- | --- | --- |
-| `ci.yaml` | Pushes and pull requests | Tests, builds, and validates configuration |
-| `publish-images.yaml` | Push to `main` or manual run | Publishes backend/frontend images to GHCR |
-| `deploy-dev.yaml` | Manual | Applies the dev Kustomize overlay |
-| `deploy-staging.yaml` | Manual or release candidate tag | Applies staging resources |
-| `deploy-prod.yaml` | Manual with input | Applies production resources |
+| Frontend | React, Vite, CSS | Storefront, filters, bag, checkout, confirmation |
+| Web server | Nginx | Static frontend hosting and `/api` proxy |
+| Backend | Python, Flask | API routes and business validation |
+| Database | PostgreSQL, SQLAlchemy | Products and orders |
+| Background work | Redis, Celery | Queued order confirmation tasks |
+| Local runtime | Docker Compose | Reproducible local services |
+| Cluster runtime | Kubernetes, Kustomize | Deployments, services, ingress, scaling |
+| Monitoring | Prometheus, Grafana, Loki | Metrics, dashboards, alerts, logs |
+| Automation | GitHub Actions, GHCR | Tests, builds, and image publishing |
+| Cloud option | Terraform, AWS/EKS | Optional infrastructure definition |
 
 ## Run locally
 
-Requirements: Docker Desktop, or Python 3.12+ and Node.js 20+ for running services separately.
+### Requirements
+
+- Docker Desktop
+- Git
+- Python 3.12 or newer for host-side tests
+- Node.js 20 or newer for host-side frontend builds
+
+Start the complete local stack:
 
 ```bash
-docker compose up --build
+cd /c/Users/Candi/Documents/ecommerce-platform
+docker compose up -d --build
 ```
 
-Open http://localhost:3000. The API health check is at http://localhost:5000/health.
+Open the storefront at [http://localhost:3000](http://localhost:3000).
 
-This local setup does not require AWS, a cloud account, or payment credentials. To stop it:
+Useful endpoints:
+
+- Storefront: `http://localhost:3000`
+- API health: `http://localhost:5000/health`
+- Product API: `http://localhost:5000/api/products`
+- Metrics: `http://localhost:5000/metrics`
+
+Check services:
+
+```bash
+docker compose ps
+docker compose logs worker
+```
+
+Stop local services:
 
 ```bash
 docker compose down
 ```
 
-To start it again later:
+### Demonstrate checkout
 
-```bash
-docker compose up -d --build
-```
+1. Open the storefront.
+2. Choose a category or browse all products.
+3. Click `+` on a product.
+4. Open `Bag`.
+5. Enter an email address.
+6. Click `Place order`.
+7. Confirm the visible order number and total.
 
-Order confirmation is shown in the storefront and queued by the worker by default. To send real email, copy `.env.example` to `.env` and provide SMTP details, then rebuild:
-
-```bash
-cp .env.example .env
-docker compose up -d --build
-```
-
-Use an SMTP provider or a Gmail app password. Never commit `.env` or expose the SMTP password in source control.
+The local order completes without SMTP. The worker logs that email is not configured rather than pretending an email was delivered.
 
 ## Test and build
+
+Backend:
 
 ```bash
 python -m pip install -r backend/requirements.txt
 python -m pytest backend/tests
-cd frontend && npm install && npm run build
 ```
 
-The backend test suite should report four passing tests. The frontend build creates `frontend/dist`; this is generated output and is intentionally ignored by Git.
+Frontend:
+
+```bash
+cd frontend
+npm install
+npm run build
+cd ..
+```
+
+Configuration checks:
+
+```bash
+docker compose config --quiet
+kubectl kustomize kubernetes/overlays/dev >/dev/null
+kubectl kustomize kubernetes/overlays/staging >/dev/null
+kubectl kustomize kubernetes/overlays/production >/dev/null
+terraform -chdir=terraform validate
+```
 
 ## API reference
 
 | Method | Endpoint | Purpose |
 | --- | --- | --- |
-| `GET` | `/health` | Service health check |
-| `GET` | `/api/products` | Return all products |
-| `GET` | `/api/products/<id>` | Return one product |
+| `GET` | `/health` | API health check |
+| `GET` | `/api/products` | List products |
+| `GET` | `/api/products/<id>` | Get one product |
 | `POST` | `/api/orders` | Validate and create an order |
 | `GET` | `/metrics` | Prometheus metrics |
 
-An order request has this shape:
+Example order:
 
 ```json
 {
@@ -196,127 +168,158 @@ An order request has this shape:
 }
 ```
 
-The API calculates the total from database prices rather than trusting a browser-supplied price. It returns an order with `confirmation: "queued"`; the Celery worker sends email only when SMTP is configured.
-
-## GitHub Actions CI
-
-The CI workflow runs automatically for pushes and pull requests. It:
-
-- Runs the Flask tests
-- Builds the Vite frontend
-- Validates Docker Compose and Kubernetes manifests
-- Builds both Docker images without pushing them
-
-To use it, create a GitHub repository, push this project, and open the **Actions** tab. No AWS account or paid service is required for CI. The deployment workflows are intentionally separate and require a Kubernetes cluster and a `KUBE_CONFIG` repository secret.
-
-### GitHub workflow sequence
-
-1. A push or pull request starts `CI`.
-2. Python dependencies are installed and backend tests run.
-3. npm dependencies are installed and the frontend is built.
-4. Docker Compose and all Kustomize overlays are validated.
-5. Backend and frontend images are built without being deployed.
-6. A push to `main` starts `Publish Images`, which pushes tagged images to GHCR.
-
-The deployment workflows are deliberately separate. They should remain manual until a real Kubernetes cluster, registry image names, secrets, TLS, and a domain are configured.
-
-## Optional cloud deployment
-
-AWS is not required for local development. When you have an AWS account and credentials, the GitHub workflows assume a container registry and Kubernetes context are configured as repository secrets. Terraform creates the AWS foundation, while Kustomize overlays customize image tags and replica counts:
+Test it directly:
 
 ```bash
-kubectl apply -k kubernetes/overlays/dev
-terraform -chdir=terraform init
-terraform -chdir=terraform plan -var-file=envs/dev.tfvars
+curl -X POST http://localhost:5000/api/orders \
+	-H "Content-Type: application/json" \
+	-d '{"email":"demo@example.com","items":[{"productId":1,"quantity":1}]}'
 ```
 
-Before production use, replace the development Kubernetes secret values and configure an external secret manager, TLS certificate, registry, and Terraform remote state.
+## Kubernetes and monitoring
 
-## Completion status
-
-Completed and verified locally:
-
-- React/Vite storefront with filtering, bag, checkout, and confirmation UI.
-- Flask API with product and order endpoints.
-- PostgreSQL persistence and initial catalogue seeding.
-- Redis/Celery background order confirmation task.
-- Optional SMTP email delivery.
-- Docker Compose local environment.
-- Minikube Kubernetes deployment with storage and startup ordering.
-- Prometheus metrics and alerts, Grafana datasource, and Loki configuration.
-- GitHub Actions CI and GitHub Container Registry image publishing.
-- Terraform syntax, initialization, and validation.
-
-Not completed because it requires external infrastructure or credentials:
-
-- AWS resource creation and paid cloud hosting.
-- Real production domain and TLS certificate.
-- External secret manager.
-- Payment processor integration.
-- Production email provider credentials.
-
-These are deployment and business integrations, not blockers for local development or demonstration.
-
-## Troubleshooting
-
-### Containers are not running
-
-```bash
-docker compose ps
-docker compose logs backend
-docker compose up -d --build
-```
-
-### Kubernetes pods are pending
-
-```bash
-minikube status
-kubectl get pods -n ecommerce
-kubectl describe pod -n ecommerce <pod-name>
-kubectl get events -n ecommerce --sort-by=.lastTimestamp
-```
-
-### The browser shows an old frontend
-
-Rebuild the frontend container and refresh the browser:
-
-```bash
-docker compose up -d --build frontend
-```
-
-### Email is not received
-
-The order can still complete without email. Check the worker log:
-
-```bash
-docker compose logs worker
-```
-
-If it says `SMTP is not configured`, add SMTP values to `.env`, then run `docker compose up -d --build`.
-
-## Local Kubernetes and monitoring
-
-The same application can run locally in Minikube without AWS:
+AWS is not required. Minikube runs the production-shaped stack locally.
 
 ```bash
 minikube start --driver=docker
+docker build -t ecommerce-backend:latest backend
+docker build -t ecommerce-frontend:latest frontend
 minikube image load ecommerce-backend:latest
 minikube image load ecommerce-frontend:latest
 kubectl apply -k kubernetes/overlays/dev
 kubectl get pods -n ecommerce
 ```
 
-The dev stack includes the frontend, Flask API, PostgreSQL, Redis, Celery worker, Prometheus, Grafana, and Loki. To inspect the API and dashboards:
+The namespace includes frontend, backend, PostgreSQL, Redis, Celery, Prometheus, Grafana, and Loki.
+
+Access the Kubernetes storefront:
 
 ```bash
 kubectl port-forward -n ecommerce service/frontend 3001:80
-kubectl port-forward -n ecommerce service/backend 5001:5000
+```
+
+Access monitoring:
+
+```bash
 kubectl port-forward -n ecommerce service/prometheus 9090:9090
 kubectl port-forward -n ecommerce service/grafana 3002:3000
 ```
 
-Open `http://localhost:3001`, `http://localhost:9090`, or `http://localhost:3002`. To remove the local Kubernetes application:
+- Storefront: [http://localhost:3001](http://localhost:3001)
+- Prometheus: [http://localhost:9090](http://localhost:9090)
+- Grafana: [http://localhost:3002](http://localhost:3002)
+
+Remove the Kubernetes application:
 
 ```bash
 kubectl delete namespace ecommerce
+minikube stop
 ```
+
+## GitHub Actions
+
+The repository is hosted at [github.com/4bdullahfaisal/ecommerce-platform](https://github.com/4bdullahfaisal/ecommerce-platform).
+
+| Workflow | Trigger | What it does |
+| --- | --- | --- |
+| `ci.yaml` | Push and pull request | Tests backend, builds frontend, validates Compose/Kustomize, builds images |
+| `publish-images.yaml` | Push to `main` | Publishes backend and frontend images to GHCR |
+| `deploy-dev.yaml` | Manual | Applies the development Kubernetes overlay |
+| `deploy-staging.yaml` | Manual or release-candidate tag | Applies staging resources |
+| `deploy-prod.yaml` | Manual input | Applies production resources |
+
+CI does not require AWS or paid hosting. Deployment workflows require a real cluster, registry, credentials, secrets, domain, and TLS configuration.
+
+## Repository map
+
+### Frontend
+
+| Path | Purpose |
+| --- | --- |
+| `frontend/src/App.jsx` | Main UI state, bag, checkout, and confirmation |
+| `frontend/src/components/ProductCard.jsx` | Reusable product card |
+| `frontend/src/main.jsx` | React entry point |
+| `frontend/src/styles.css` | Responsive design |
+| `frontend/Dockerfile` | Frontend image |
+| `frontend/nginx.conf` | SPA hosting and API proxy |
+
+### Backend
+
+| Path | Purpose |
+| --- | --- |
+| `backend/app/app.py` | Flask factory and API routes |
+| `backend/app/models.py` | Product and Order database models |
+| `backend/app/utils.py` | Seed products |
+| `backend/app/tasks.py` | Celery and SMTP confirmation task |
+| `backend/tests/` | Automated API and model tests |
+| `backend/Dockerfile` | Gunicorn image |
+
+### Platform
+
+| Path | Purpose |
+| --- | --- |
+| `docker-compose.yml` | Local service orchestration |
+| `kubernetes/base/` | Shared Kubernetes resources |
+| `kubernetes/overlays/` | Environment-specific configuration |
+| `terraform/` | Optional AWS infrastructure |
+| `monitoring/` | Prometheus, Grafana, and Loki configuration |
+| `.github/workflows/` | CI, image publishing, and deployment workflows |
+| `WALKTHROUGH.md` | Full step-by-step operating guide |
+
+## Email configuration
+
+Email is optional. Copy the example file:
+
+```bash
+cp .env.example .env
+```
+
+Set provider details:
+
+```env
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USERNAME=your-email@gmail.com
+SMTP_PASSWORD=your-gmail-app-password
+SMTP_FROM=your-email@gmail.com
+```
+
+Use an app password, never a normal account password. `.env` is ignored by Git and must never be committed.
+
+## Production status
+
+Completed:
+
+- Working React storefront and checkout flow
+- Flask API and PostgreSQL persistence
+- Redis/Celery background task
+- Optional SMTP delivery
+- Docker Compose environment
+- Minikube Kubernetes deployment
+- Prometheus metrics and Grafana/Loki configuration
+- GitHub Actions CI and image publishing
+- Terraform configuration validated locally
+- MIT licensing and UI copyright attribution
+
+Still required before public production:
+
+- Hosted cluster or production server
+- Real domain and TLS certificate
+- External secrets manager
+- Payment processor
+- Production email credentials
+- Database backups and recovery plan
+- Authentication, authorization, rate limiting, and security review
+- Production log collector for Loki
+
+## License
+
+Copyright (c) 2026 Abdullah Faisal. This project is licensed under the [MIT License](LICENSE).
+
+The storefront displays:
+
+```text
+© 2026 Abdullah Faisal. All rights reserved.
+```
+
+See [LICENSE](LICENSE) for the full license text.

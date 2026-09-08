@@ -57,7 +57,7 @@ function App() {
       <section className="shop" id="shop"><div className="section-heading"><div><p className="eyebrow">The edit / 01</p><h2>Good things, thoughtfully chosen.</h2></div><div className="filters">{categories.map((item) => <button className={category === item ? 'active' : ''} onClick={() => setCategory(item)} key={item}>{item}</button>)}</div></div><div className="product-grid">{visibleProducts.map((product) => <ProductCard key={product.id} product={product} onAdd={addToCart} />)}</div></section>
       <section className="story" id="story"><p className="eyebrow">A considered approach</p><h2>Less, but better held.</h2><p>We look for honest materials, quiet forms, and makers who care about the details that reveal themselves over time.</p></section>
     </main>
-    <footer><span>COMMON GROUND</span><span>{status || `Your bag total: $${total.toFixed(2)}`}</span><span>© 2026</span></footer>
+    <footer><span>COMMON GROUND</span><span>{status || `Your bag total: $${total.toFixed(2)}`}</span><span>© 2026 Abdullah Faisal. All rights reserved.</span></footer>
   </div>;
 }
 
