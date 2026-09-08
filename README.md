@@ -13,6 +13,7 @@
 
 | Quick link | Purpose |
 | --- | --- |
+| [Full walkthrough](WALKTHROUGH.md) | Follow the project from startup to Kubernetes |
 | [Run with Docker](#run-locally) | Start the complete local application |
 | [Run with Kubernetes](#local-kubernetes-and-monitoring) | Run the production-shaped stack in Minikube |
 | [View CI/CD](#github-actions-cicd) | Understand GitHub automation |
