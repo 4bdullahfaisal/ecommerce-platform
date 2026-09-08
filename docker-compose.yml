@@ -25,6 +25,11 @@ services:
       DATABASE_URL: postgresql+psycopg://ecommerce:ecommerce_dev@postgres:5432/ecommerce
       REDIS_URL: redis://redis:6379/0
       CORS_ORIGINS: http://localhost:3000
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-}
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -34,6 +39,11 @@ services:
     command: celery -A app.tasks.celery worker --loglevel=info
     environment:
       REDIS_URL: redis://redis:6379/0
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-}
     depends_on:
       redis: { condition: service_healthy }
   frontend:

@@ -26,7 +26,8 @@ def test_products_are_seeded(client):
 
 
 def test_order_requires_valid_items(client, monkeypatch):
-    monkeypatch.setattr("app.app.send_order_confirmation.delay", lambda order_id: None)
+    monkeypatch.setattr("app.app.send_order_confirmation.delay", lambda order_id, email, total: None)
     response = client.post("/api/orders", json={"email": "buyer@example.com", "items": [{"productId": 1, "quantity": 2}]})
     assert response.status_code == 201
     assert response.json["total"] == 178.0
+    assert response.json["confirmation"] == "queued"

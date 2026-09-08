@@ -64,8 +64,10 @@ def create_app(test_config=None):
         order = Order(email=email, total_cents=total_cents)
         db.session.add(order)
         db.session.commit()
-        send_order_confirmation.delay(order.id)
-        return jsonify(order.to_dict()), 201
+        send_order_confirmation.delay(order.id, order.email, order.total_cents / 100)
+        result = order.to_dict()
+        result["confirmation"] = "queued"
+        return jsonify(result), 201
 
     return app
 

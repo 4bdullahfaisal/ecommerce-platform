@@ -24,6 +24,15 @@ To start it again later:
 docker compose up -d --build
 ```
 
+Order confirmation is shown in the storefront and queued by the worker by default. To send real email, copy `.env.example` to `.env` and provide SMTP details, then rebuild:
+
+```bash
+cp .env.example .env
+docker compose up -d --build
+```
+
+Use an SMTP provider or a Gmail app password. Never commit `.env` or expose the SMTP password in source control.
+
 ## Test and build
 
 ```bash
