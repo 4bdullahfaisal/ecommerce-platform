@@ -54,3 +54,30 @@ terraform -chdir=terraform plan -var-file=envs/dev.tfvars
 ```
 
 Before production use, replace the development Kubernetes secret values and configure an external secret manager, TLS certificate, registry, and Terraform remote state.
+
+## Local Kubernetes and monitoring
+
+The same application can run locally in Minikube without AWS:
+
+```bash
+minikube start --driver=docker
+minikube image load ecommerce-backend:latest
+minikube image load ecommerce-frontend:latest
+kubectl apply -k kubernetes/overlays/dev
+kubectl get pods -n ecommerce
+```
+
+The dev stack includes the frontend, Flask API, PostgreSQL, Redis, Celery worker, Prometheus, Grafana, and Loki. To inspect the API and dashboards:
+
+```bash
+kubectl port-forward -n ecommerce service/frontend 3001:80
+kubectl port-forward -n ecommerce service/backend 5001:5000
+kubectl port-forward -n ecommerce service/prometheus 9090:9090
+kubectl port-forward -n ecommerce service/grafana 3002:3000
+```
+
+Open `http://localhost:3001`, `http://localhost:9090`, or `http://localhost:3002`. To remove the local Kubernetes application:
+
+```bash
+kubectl delete namespace ecommerce
+```

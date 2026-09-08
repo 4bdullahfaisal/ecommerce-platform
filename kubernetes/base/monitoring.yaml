@@ -1,0 +1,173 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: ecommerce
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+    rule_files:
+      - /etc/prometheus/alerts.yml
+    scrape_configs:
+      - job_name: prometheus
+        static_configs:
+          - targets: ['localhost:9090']
+      - job_name: ecommerce-backend
+        metrics_path: /metrics
+        static_configs:
+          - targets: ['backend:5000']
+  alerts.yml: |
+    groups:
+      - name: ecommerce
+        rules:
+          - alert: BackendDown
+            expr: up{job="ecommerce-backend"} == 0
+            for: 2m
+            labels:
+              severity: critical
+            annotations:
+              summary: Ecommerce backend is unavailable
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: ecommerce
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: prometheus } }
+  template:
+    metadata: { labels: { app: prometheus } }
+    spec:
+      containers:
+        - name: prometheus
+          image: prom/prometheus:v2.53.0
+          args: ["--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.path=/prometheus"]
+          ports: [{ containerPort: 9090 }]
+          volumeMounts:
+            - { name: config, mountPath: /etc/prometheus }
+      volumes:
+        - name: config
+          configMap: { name: prometheus-config }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: ecommerce
+spec:
+  selector: { app: prometheus }
+  ports: [{ port: 9090, targetPort: 9090 }]
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasource
+  namespace: ecommerce
+data:
+  datasource.yaml: |
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        access: proxy
+        url: http://prometheus:9090
+        isDefault: true
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: ecommerce
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: grafana } }
+  template:
+    metadata: { labels: { app: grafana } }
+    spec:
+      containers:
+        - name: grafana
+          image: grafana/grafana:11.1.0
+          ports: [{ containerPort: 3000 }]
+          env:
+            - name: GF_AUTH_ANONYMOUS_ENABLED
+              value: "true"
+            - name: GF_AUTH_ANONYMOUS_ORG_ROLE
+              value: Viewer
+          volumeMounts:
+            - { name: datasource, mountPath: /etc/grafana/provisioning/datasources }
+      volumes:
+        - name: datasource
+          configMap: { name: grafana-datasource }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: ecommerce
+spec:
+  selector: { app: grafana }
+  ports: [{ port: 3000, targetPort: 3000 }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: loki
+  namespace: ecommerce
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: loki } }
+  template:
+    metadata: { labels: { app: loki } }
+    spec:
+      containers:
+        - name: loki
+          image: grafana/loki:3.1.0
+          args: ["-config.file=/etc/loki/loki-config.yaml"]
+          ports: [{ containerPort: 3100 }]
+          volumeMounts:
+            - { name: config, mountPath: /etc/loki }
+      volumes:
+        - name: config
+          configMap: { name: loki-config }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: loki-config
+  namespace: ecommerce
+data:
+  loki-config.yaml: |
+    auth_enabled: false
+    server:
+      http_listen_port: 3100
+    common:
+      path_prefix: /loki
+      storage:
+        filesystem:
+          chunks_directory: /loki/chunks
+          rules_directory: /loki/rules
+      replication_factor: 1
+      ring:
+        kvstore:
+          store: inmemory
+    schema_config:
+      configs:
+        - from: 2024-01-01
+          store: tsdb
+          object_store: filesystem
+          schema: v13
+          index:
+            prefix: index_
+            period: 24h
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: loki
+  namespace: ecommerce
+spec:
+  selector: { app: loki }
+  ports: [{ port: 3100, targetPort: 3100 }]

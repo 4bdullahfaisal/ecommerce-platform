@@ -2,6 +2,7 @@ import os
 
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from prometheus_flask_exporter import PrometheusMetrics
 
 from app.models import Order, Product, db
 from app.tasks import send_order_confirmation
@@ -20,6 +21,7 @@ def create_app(test_config=None):
         app.config.update(test_config)
 
     CORS(app, resources={r"/api/*": {"origins": os.getenv("CORS_ORIGINS", "*")}})
+    PrometheusMetrics(app)
     db.init_app(app)
 
     with app.app_context():

@@ -9,9 +9,14 @@ spec:
   template:
     metadata: { labels: { app: backend } }
     spec:
+      initContainers:
+        - name: wait-for-postgres
+          image: postgres:16-alpine
+          command: ["sh", "-c", "until pg_isready -h postgres -U ecommerce -d ecommerce; do sleep 2; done"]
       containers:
         - name: backend
-          image: ghcr.io/example/ecommerce-backend:latest
+          image: ecommerce-backend:latest
+          imagePullPolicy: IfNotPresent
           ports: [{ containerPort: 5000 }]
           envFrom: [{ configMapRef: { name: ecommerce-config } }, { secretRef: { name: ecommerce-secrets } }]
           readinessProbe: { httpGet: { path: /health, port: 5000 }, initialDelaySeconds: 5, periodSeconds: 10 }
@@ -30,6 +35,29 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: ghcr.io/example/ecommerce-frontend:latest
+          image: ecommerce-frontend:latest
+          imagePullPolicy: IfNotPresent
           ports: [{ containerPort: 80 }]
           readinessProbe: { httpGet: { path: /, port: 80 }, initialDelaySeconds: 5, periodSeconds: 10 }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  namespace: ecommerce
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: worker } }
+  template:
+    metadata: { labels: { app: worker } }
+    spec:
+      initContainers:
+        - name: wait-for-redis
+          image: redis:7-alpine
+          command: ["sh", "-c", "until redis-cli -h redis ping | grep -q PONG; do sleep 2; done"]
+      containers:
+        - name: worker
+          image: ecommerce-backend:latest
+          imagePullPolicy: IfNotPresent
+          command: ["celery", "-A", "app.tasks.celery", "worker", "--loglevel=info"]
+          envFrom: [{ configMapRef: { name: ecommerce-config } }]
