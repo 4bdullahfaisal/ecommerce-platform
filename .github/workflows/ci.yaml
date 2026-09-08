@@ -1,8 +1,18 @@
 name: CI
+
 on:
   push:
-    branches: [main]
+    branches: ['**']
   pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   backend:
     runs-on: ubuntu-latest
@@ -10,8 +20,14 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }
+      - name: Cache Python packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-${{ hashFiles('backend/requirements.txt') }}
       - run: pip install -r backend/requirements.txt
       - run: python -m pytest backend/tests
+
   frontend:
     runs-on: ubuntu-latest
     steps:
@@ -22,10 +38,34 @@ jobs:
         working-directory: frontend
       - run: npm run build
         working-directory: frontend
-  containers:
-    needs: [backend, frontend]
+
+  configuration:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: docker build -t ecommerce-backend ./backend
-      - run: docker build -t ecommerce-frontend ./frontend
+      - name: Validate Compose configuration
+        run: docker compose config --quiet
+      - name: Validate Kubernetes manifests
+        run: |
+          kubectl kustomize kubernetes/overlays/dev >/dev/null
+          kubectl kustomize kubernetes/overlays/staging >/dev/null
+          kubectl kustomize kubernetes/overlays/production >/dev/null
+
+  containers:
+    needs: [backend, frontend, configuration]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          tags: ecommerce-backend:${{ github.sha }}
+          push: false
+      - name: Build frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          tags: ecommerce-frontend:${{ github.sha }}
+          push: false
