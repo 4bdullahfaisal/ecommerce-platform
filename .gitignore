@@ -13,3 +13,6 @@ terraform/.terraform/
 terraform/*.tfstate*
 terraform/*.tfplan
 .DS_Store
+.WALKTHROUGH.md
+WALKTHROUGH.md
+INTERVIEW_GUIDE_PRIVATE.md
