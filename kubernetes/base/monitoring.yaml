@@ -76,6 +76,58 @@ data:
         url: http://prometheus:9090
         isDefault: true
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-provider
+  namespace: ecommerce
+data:
+  dashboards.yaml: |
+    apiVersion: 1
+    providers:
+      - name: ecommerce
+        orgId: 1
+        folder: Ecommerce
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 30
+        options:
+          path: /var/lib/grafana/dashboards
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ecommerce-dashboard
+  namespace: ecommerce
+data:
+  ecommerce-overview.json: |
+    {
+      "title": "Ecommerce Overview",
+      "uid": "ecommerce-overview",
+      "schemaVersion": 39,
+      "refresh": "15s",
+      "panels": [
+        {
+          "type": "stat",
+          "title": "Backend availability",
+          "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+          "targets": [{"expr": "up{job=\"ecommerce-backend\"}"}]
+        },
+        {
+          "type": "timeseries",
+          "title": "API request rate",
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+          "targets": [{"expr": "sum(rate(flask_http_request_total[5m]))"}]
+        },
+        {
+          "type": "timeseries",
+          "title": "API latency",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+          "targets": [{"expr": "sum(rate(flask_http_request_duration_seconds_sum[5m])) / sum(rate(flask_http_request_duration_seconds_count[5m]))"}]
+        }
+      ]
+    }
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -98,9 +150,15 @@ spec:
               value: Viewer
           volumeMounts:
             - { name: datasource, mountPath: /etc/grafana/provisioning/datasources }
+            - { name: dashboard-provider, mountPath: /etc/grafana/provisioning/dashboards }
+            - { name: dashboard, mountPath: /var/lib/grafana/dashboards }
       volumes:
         - name: datasource
           configMap: { name: grafana-datasource }
+        - name: dashboard-provider
+          configMap: { name: grafana-dashboard-provider }
+        - name: dashboard
+          configMap: { name: ecommerce-dashboard }
 ---
 apiVersion: v1
 kind: Service
